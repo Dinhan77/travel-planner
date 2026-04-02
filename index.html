@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>✈️ Travel Planner AI</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', sans-serif; background: #06080f; color: #fff; min-height: 100vh; }
+
+    .header {
+      background: linear-gradient(135deg, #0a1628, #0a2010, #0a1628);
+      border-bottom: 1px solid #1a2540;
+      padding: 24px 20px;
+      text-align: center;
+    }
+    .header h1 { font-size: 30px; background: linear-gradient(90deg, #43e97b, #38f9d7, #4facfe); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 6px; }
+    .header p { color: #555; font-size: 13px; }
+
+    .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+
+    .card { background: #0d1425; border: 1px solid #1a2540; border-radius: 16px; padding: 22px; margin-bottom: 16px; }
+    .card h2 { font-size: 15px; color: #43e97b; margin-bottom: 18px; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .form-group { margin-bottom: 14px; }
+    label { display: block; font-size: 12px; color: #555; margin-bottom: 5px; }
+
+    input[type=number], select {
+      width: 100%; padding: 11px 14px;
+      background: #06080f; border: 1px solid #1a2540;
+      border-radius: 8px; color: #fff; font-size: 14px; outline: none;
+    }
+    input:focus, select:focus { border-color: #43e97b; }
+    select option { background: #0d1425; }
+
+    .option-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+    .option-btn {
+      padding: 8px 14px; border-radius: 20px;
+      border: 1px solid #1a2540; background: #06080f;
+      color: #555; cursor: pointer; font-size: 12px;
+      transition: all 0.2s;
+    }
+    .option-btn.selected { border-color: #43e97b; color: #43e97b; background: rgba(67,233,123,0.08); }
+
+    .btn-plan {
+      width: 100%; padding: 15px;
+      background: linear-gradient(90deg, #43e97b, #38f9d7);
+      border: none; border-radius: 12px;
+      color: #000; font-size: 16px; font-weight: bold;
+      cursor: pointer; margin-bottom: 20px;
+      transition: opacity 0.2s;
+    }
+    .btn-plan:hover { opacity: 0.88; }
+    .btn-plan:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .loading { display: none; text-align: center; padding: 24px; color: #555; }
+    .spinner { width: 44px; height: 44px; border: 3px solid #1a2540; border-top-color: #43e97b; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 14px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-msg { display: none; background: rgba(255,60,60,0.08); border: 1px solid #ff3c3c; border-radius: 10px; padding: 12px; color: #ff6b6b; font-size: 13px; margin-bottom: 12px; }
+
+    /* Result */
+    .result-section { display: none; }
+    .result-hero { text-align: center; padding: 28px; background: #06080f; border-radius: 14px; border: 2px solid #1a2540; margin-bottom: 16px; }
+    .result-emoji { font-size: 72px; margin-bottom: 12px; }
+    .result-rating { font-size: 28px; font-weight: bold; margin-bottom: 6px; }
+    .result-subtitle { font-size: 14px; color: #555; }
+
+    .result-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+    .result-card { background: #06080f; border: 1px solid #1a2540; border-radius: 12px; padding: 16px; text-align: center; }
+    .rc-icon { font-size: 32px; margin-bottom: 8px; }
+    .rc-label { font-size: 11px; color: #555; margin-bottom: 4px; }
+    .rc-value { font-size: 15px; font-weight: bold; }
+
+    /* Itinerary */
+    .day-card { background: #06080f; border: 1px solid #1a2540; border-radius: 12px; padding: 16px; margin-bottom: 10px; }
+    .day-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .day-num { width: 36px; height: 36px; background: linear-gradient(135deg, #43e97b, #38f9d7); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: bold; color: #000; }
+    .day-title { font-size: 14px; font-weight: bold; }
+    .day-subtitle { font-size: 11px; color: #555; }
+    .activity-list { list-style: none; }
+    .activity-list li { padding: 6px 0; border-bottom: 1px solid #1a2540; font-size: 13px; color: #aaa; display: flex; align-items: center; gap: 8px; }
+    .activity-list li:last-child { border-bottom: none; }
+
+    /* Budget */
+    .budget-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+    .budget-item { background: #06080f; border: 1px solid #1a2540; border-radius: 10px; padding: 12px; text-align: center; }
+    .budget-label { font-size: 11px; color: #555; margin-bottom: 4px; }
+    .budget-value { font-size: 16px; font-weight: bold; color: #43e97b; }
+
+    /* Tips */
+    .tips-list { list-style: none; }
+    .tips-list li { padding: 8px 0; border-bottom: 1px solid #1a2540; font-size: 13px; color: #aaa; display: flex; gap: 10px; }
+    .tips-list li:last-child { border-bottom: none; }
+
+    /* Alert */
+    .alert { padding: 12px 16px; border-radius: 10px; margin-bottom: 12px; font-size: 13px; }
+    .alert-green  { background: rgba(67,233,123,0.08); border: 1px solid #43e97b; color: #43e97b; }
+    .alert-yellow { background: rgba(247,183,49,0.08); border: 1px solid #f7b731; color: #f7b731; }
+    .alert-red    { background: rgba(255,68,68,0.08);  border: 1px solid #ff4444; color: #ff6b6b; }
+
+    .section-title { font-size: 12px; color: #444; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; }
+    .disclaimer { text-align: center; color: #222; font-size: 11px; padding: 20px 0 30px; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1>✈️ Travel Planner AI</h1>
+  <p>Lập kế hoạch du lịch thông minh · Powered by OpenGradient AI</p>
+</div>
+
+<div class="container">
+
+  <!-- Form: Thông tin chuyến đi -->
+  <div class="card">
+    <h2>📍 Thông tin chuyến đi</h2>
+    <div class="grid-2">
+      <div class="form-group">
+        <label>💰 Ngân sách mỗi ngày (USD)</label>
+        <input type="number" id="budget" placeholder="vd: 50" value="80">
+      </div>
+      <div class="form-group">
+        <label>📅 Số ngày du lịch</label>
+        <input type="number" id="duration" placeholder="vd: 7" value="7">
+      </div>
+      <div class="form-group">
+        <label>👥 Số người</label>
+        <input type="number" id="groupSize" placeholder="vd: 2" value="2">
+      </div>
+      <div class="form-group">
+        <label>🗓️ Mùa du lịch</label>
+        <select id="season">
+          <option value="0">🌸 Mùa Xuân (Tháng 2-4)</option>
+          <option value="1">☀️ Mùa Hè (Tháng 5-8)</option>
+          <option value="2" selected>🍂 Mùa Thu (Tháng 9-11)</option>
+          <option value="3">❄️ Mùa Đông (Tháng 12-1)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>🌍 Loại điểm đến</label>
+      <div class="option-grid" id="destType">
+        <div class="option-btn selected" onclick="selectOption('destType',this,0)">🏖️ Biển</div>
+        <div class="option-btn" onclick="selectOption('destType',this,1)">🏔️ Núi</div>
+        <div class="option-btn" onclick="selectOption('destType',this,2)">🏙️ Thành phố</div>
+        <div class="option-btn" onclick="selectOption('destType',this,3)">🌾 Nông thôn</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>🎯 Sở thích hoạt động</label>
+      <div class="option-grid" id="activity">
+        <div class="option-btn" onclick="selectOption('activity',this,0)">🏛️ Văn hóa</div>
+        <div class="option-btn selected" onclick="selectOption('activity',this,1)">🌿 Thiên nhiên</div>
+        <div class="option-btn" onclick="selectOption('activity',this,2)">🍜 Ẩm thực</div>
+        <div class="option-btn" onclick="selectOption('activity',this,3)">🛍️ Mua sắm</div>
+        <div class="option-btn" onclick="selectOption('activity',this,4)">🧗 Phiêu lưu</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>👨‍👩‍👧 Loại chuyến đi</label>
+      <div class="option-grid" id="tripType">
+        <div class="option-btn" onclick="selectOption('tripType',this,0)">🧳 Solo</div>
+        <div class="option-btn selected" onclick="selectOption('tripType',this,1)">💑 Cặp đôi</div>
+        <div class="option-btn" onclick="selectOption('tripType',this,2)">👨‍👩‍👧‍👦 Gia đình</div>
+        <div class="option-btn" onclick="selectOption('tripType',this,3)">👫 Nhóm bạn</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>✨ Phong cách du lịch</label>
+      <div class="option-grid" id="travelStyle">
+        <div class="option-btn" onclick="selectOption('travelStyle',this,0)">💚 Tiết kiệm</div>
+        <div class="option-btn selected" onclick="selectOption('travelStyle',this,1)">⭐ Vừa phải</div>
+        <div class="option-btn" onclick="selectOption('travelStyle',this,2)">👑 Sang trọng</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="form-group">
+        <label>📏 Khoảng cách từ nhà (km)</label>
+        <input type="number" id="distance" placeholder="vd: 1000" value="1000">
+      </div>
+      <div class="form-group">
+        <label>👶 Có trẻ em không?</label>
+        <div class="option-grid" id="hasKids">
+          <div class="option-btn selected" onclick="selectOption('hasKids',this,0)">❌ Không</div>
+          <div class="option-btn" onclick="selectOption('hasKids',this,1)">✅ Có</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>📍 Tên điểm đến (tùy chọn)</label>
+      <input type="text" id="destination" placeholder="vd: Đà Nẵng, Tokyo, Bali..." style="width:100%;padding:11px 14px;background:#06080f;border:1px solid #1a2540;border-radius:8px;color:#fff;font-size:14px;outline:none;">
+    </div>
+  </div>
+
+  <div class="error-msg" id="errorMsg"></div>
+
+  <button class="btn-plan" onclick="planTrip()">✈️ Lập kế hoạch du lịch</button>
+
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <p>Đang phân tích với OpenGradient AI...</p>
+  </div>
+
+  <!-- Results -->
+  <div class="result-section" id="resultSection">
+
+    <!-- Alert -->
+    <div id="alertBox"></div>
+
+    <!-- Hero Result -->
+    <div class="result-hero" id="resultHero">
+      <div class="result-emoji" id="resultEmoji"></div>
+      <div class="result-rating" id="resultRating"></div>
+      <div class="result-subtitle" id="resultSubtitle"></div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="result-cards">
+      <div class="result-card">
+        <div class="rc-icon">🏨</div>
+        <div class="rc-label">Chỗ ở gợi ý</div>
+        <div class="rc-value" id="rcAccommodation">-</div>
+      </div>
+      <div class="result-card">
+        <div class="rc-icon">🎯</div>
+        <div class="rc-label">Hoạt động chính</div>
+        <div class="rc-value" id="rcActivity">-</div>
+      </div>
+      <div class="result-card">
+        <div class="rc-icon">💰</div>
+        <div class="rc-label">Mức ngân sách</div>
+        <div class="rc-value" id="rcBudget">-</div>
+      </div>
+    </div>
+
+    <!-- Budget Breakdown -->
+    <div class="card">
+      <h2>💰 Ước tính chi phí</h2>
+      <div class="budget-grid">
+        <div class="budget-item">
+          <div class="budget-label">🏨 Chỗ ở</div>
+          <div class="budget-value" id="costAccom">-</div>
+        </div>
+        <div class="budget-item">
+          <div class="budget-label">🍜 Ăn uống</div>
+          <div class="budget-value" id="costFood">-</div>
+        </div>
+        <div class="budget-item">
+          <div class="budget-label">🎭 Hoạt động</div>
+          <div class="budget-value" id="costActivity">-</div>
+        </div>
+        <div class="budget-item">
+          <div class="budget-label">🚕 Di chuyển</div>
+          <div class="budget-value" id="costTransport">-</div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:12px 0;border-top:1px solid #1a2540">
+        <span style="font-size:14px;color:#555">Tổng chi phí ước tính</span>
+        <span style="font-size:18px;font-weight:bold;color:#43e97b" id="costTotal">-</span>
+      </div>
+    </div>
+
+    <!-- Itinerary -->
+    <div class="card">
+      <h2>🗺️ Lịch trình gợi ý</h2>
+      <div id="itineraryList"></div>
+    </div>
+
+    <!-- Tips -->
+    <div class="card">
+      <h2>💡 Mẹo du lịch</h2>
+      <ul class="tips-list" id="tipsList"></ul>
+    </div>
+
+  </div>
+
+  <p class="disclaimer">✈️ Gợi ý mang tính tham khảo · OpenGradient AI · Luôn kiểm tra thông tin trước khi đặt vé</p>
+</div>
+
+<script>
+  const MODEL_CID = "0DieWo5CpT7nDk6oWEpdnhd4GJmTSUWCW9UOuR6bkNU";
+
+  const selections = {
+    destType: 0,
+    activity: 1,
+    tripType: 1,
+    travelStyle: 1,
+    hasKids: 0
+  };
+
+  function selectOption(group, el, val) {
+    selections[group] = val;
+    document.querySelectorAll(`#${group} .option-btn`).forEach(b => b.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+
+  async function planTrip() {
+    const budget   = parseFloat(document.getElementById('budget').value);
+    const duration = parseFloat(document.getElementById('duration').value);
+    const group    = parseFloat(document.getElementById('groupSize').value);
+    const season   = parseFloat(document.getElementById('season').value);
+    const distance = parseFloat(document.getElementById('distance').value);
+    const dest     = document.getElementById('destination').value.trim();
+
+    if ([budget, duration, group, distance].some(isNaN) || budget <= 0 || duration <= 0) {
+      showError('⚠️ Vui lòng điền đầy đủ thông tin hợp lệ!');
+      return;
+    }
+
+    document.getElementById('errorMsg').style.display = 'none';
+    document.getElementById('resultSection').style.display = 'none';
+    document.getElementById('loading').style.display = 'block';
+    document.querySelector('.btn-plan').disabled = true;
+
+    const input = [[
+      budget, duration, group,
+      selections.travelStyle,
+      selections.activity,
+      season, distance,
+      selections.hasKids,
+      selections.tripType,
+      selections.destType
+    ]];
+
+    let ratingIdx = 2, budgetIdx = 1, activityIdx = 1, accomIdx = 1;
+
+    try {
+      const res = await fetch("https://api.opengradient.ai/api/v1/model/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ model_cid: MODEL_CID, inputs: { float_input: input } })
+      });
+      const data = await res.json();
+      const labels = data?.output_label ?? [];
+      ratingIdx   = parseInt(labels[0] ?? calcRating(budget, duration, season));
+      budgetIdx   = parseInt(labels[1] ?? calcBudget(budget));
+      activityIdx = parseInt(labels[2] ?? selections.activity);
+      accomIdx    = parseInt(labels[3] ?? calcAccom(budget));
+    } catch {
+      ratingIdx   = calcRating(budget, duration, season);
+      budgetIdx   = calcBudget(budget);
+      activityIdx = selections.activity;
+      accomIdx    = calcAccom(budget);
+    } finally {
+      document.getElementById('loading').style.display = 'none';
+      document.querySelector('.btn-plan').disabled = false;
+    }
+
+    showResult(ratingIdx, budgetIdx, activityIdx, accomIdx, budget, duration, group, dest);
+  }
+
+  function calcRating(budget, duration, season) {
+    let s = 0;
+    if (budget >= 50) s += 2;
+    if (5 <= duration && duration <= 14) s += 2;
+    if (season === 0 || season === 2) s += 2;
+    return s >= 5 ? 2 : s >= 3 ? 1 : 0;
+  }
+  function calcBudget(b) { return b >= 150 ? 2 : b >= 50 ? 1 : 0; }
+  function calcAccom(b) { return b >= 150 ? 2 : b >= 50 ? 1 : 0; }
+
+  function showResult(rIdx, bIdx, aIdx, acIdx, budget, duration, group, dest) {
+    const ratings = [
+      { emoji:'😟', label:'Cần xem xét lại', color:'#ff4444', desc:'Một số yếu tố chưa phù hợp, nên điều chỉnh kế hoạch.', alert:'red' },
+      { emoji:'😊', label:'Chuyến đi khá tốt', color:'#f7b731', desc:'Kế hoạch ổn, có thể cải thiện thêm một số điểm.', alert:'yellow' },
+      { emoji:'🤩', label:'Chuyến đi tuyệt vời!', color:'#43e97b', desc:'Kế hoạch rất phù hợp, hãy lên đường thôi!', alert:'green' },
+    ];
+    const budgets = ['💚 Tiết kiệm', '⭐ Trung bình', '👑 Cao cấp'];
+    const activities = ['🏛️ Văn hóa & Lịch sử', '🌿 Thiên nhiên', '🍜 Ẩm thực', '🛍️ Mua sắm', '🧗 Phiêu lưu'];
+    const accoms = ['🏕️ Hostel/Camping', '🏨 Khách sạn 3 sao', '🏖️ Resort / 5 sao'];
+    const accomCosts = [20, 60, 150];
+
+    const r = ratings[rIdx] || ratings[1];
+    const totalDays = duration;
+    const accomCost = accomCosts[acIdx] * totalDays;
+    const foodCost  = (budget * 0.3) * totalDays;
+    const actCost   = (budget * 0.2) * totalDays;
+    const transCost = (budget * 0.15) * totalDays;
+    const total     = (accomCost + foodCost + actCost + transCost) * group;
+
+    // Alert
+    const alertColors = {
+      green: 'alert-green',
+      yellow: 'alert-yellow',
+      red: 'alert-red'
+    };
+    const destName = dest || 'điểm đến của bạn';
+    document.getElementById('alertBox').innerHTML = `
+      <div class="alert ${alertColors[r.alert]}">${r.emoji} ${r.label} — ${r.desc}</div>`;
+
+    // Hero
+    document.getElementById('resultEmoji').textContent = r.emoji;
+    document.getElementById('resultRating').textContent = r.label;
+    document.getElementById('resultRating').style.color = r.color;
+    document.getElementById('resultSubtitle').textContent =
+      `${totalDays} ngày · ${group} người · ${destName}`;
+    document.getElementById('resultHero').style.borderColor = r.color;
+
+    // Stats
+    document.getElementById('rcAccommodation').textContent = accoms[acIdx];
+    document.getElementById('rcActivity').textContent = activities[aIdx];
+    document.getElementById('rcBudget').textContent = budgets[bIdx];
+
+    // Budget
+    const fmt = v => `$${Math.round(v).toLocaleString()}`;
+    document.getElementById('costAccom').textContent = fmt(accomCost);
+    document.getElementById('costFood').textContent = fmt(foodCost * group);
+    document.getElementById('costActivity').textContent = fmt(actCost * group);
+    document.getElementById('costTransport').textContent = fmt(transCost * group);
+    document.getElementById('costTotal').textContent = fmt(total);
+
+    // Itinerary
+    const activitySets = {
+      0: ['Tham quan bảo tàng lịch sử', 'Khám phá khu phố cổ', 'Xem biểu diễn nghệ thuật truyền thống', 'Thăm đền chùa/nhà thờ nổi tiếng'],
+      1: ['Trekking khám phá rừng núi', 'Tham quan thác nước/hồ đẹp', 'Chụp ảnh bình minh/hoàng hôn', 'Picnic ngoài trời'],
+      2: ['Thưởng thức ẩm thực đặc sản địa phương', 'Tour chợ đêm và street food', 'Học nấu ăn truyền thống', 'Ghé thăm các nhà hàng nổi tiếng'],
+      3: ['Khám phá trung tâm mua sắm', 'Mua đồ lưu niệm tại chợ địa phương', 'Thăm khu outlet/thời trang', 'Tìm hiểu hàng thủ công mỹ nghệ'],
+      4: ['Lặn biển/chèo thuyền kayak', 'Leo núi/rappelling', 'Cắm trại qua đêm ngoài trời', 'Zip-line và các hoạt động mạo hiểm'],
+    };
+    const acts = activitySets[aIdx] || activitySets[1];
+    const days = Math.min(Math.round(totalDays), 7);
+    let itHtml = '';
+    for (let d = 1; d <= days; d++) {
+      const morning = acts[d % acts.length];
+      const afternoon = acts[(d + 1) % acts.length];
+      const evening = acIdx >= 1 ? '🍽️ Ăn tối tại nhà hàng địa phương' : '🍜 Ăn tối tại quán bình dân';
+      itHtml += `
+        <div class="day-card">
+          <div class="day-header">
+            <div class="day-num">${d}</div>
+            <div>
+              <div class="day-title">Ngày ${d}${d === 1 ? ' — Ngày đến' : d === days ? ' — Ngày về' : ''}</div>
+              <div class="day-subtitle">${destName}</div>
+            </div>
+          </div>
+          <ul class="activity-list">
+            <li>🌅 Sáng: ${morning}</li>
+            <li>🌞 Chiều: ${afternoon}</li>
+            <li>${evening}</li>
+            ${d === 1 ? '<li>🏨 Check-in khách sạn & nghỉ ngơi</li>' : ''}
+          </ul>
+        </div>`;
+    }
+    if (totalDays > 7) {
+      itHtml += `<div style="text-align:center;color:#444;font-size:12px;padding:10px">... và ${Math.round(totalDays - 7)} ngày tiếp theo tương tự</div>`;
+    }
+    document.getElementById('itineraryList').innerHTML = itHtml;
+
+    // Tips
+    const tipSets = {
+      0: [['🏨', 'Đặt phòng sớm để có giá tốt nhất, nên đặt trước 1-2 tháng'],
+          ['🎒', 'Mang theo đồ gọn nhẹ, ưu tiên ba lô để di chuyển dễ dàng'],
+          ['💳', 'Đổi ngoại tệ trước khi đi để tránh phí chuyển đổi cao'],
+          ['📱', 'Tải app offline maps để dùng khi không có internet']],
+      1: [['🏨', 'Chọn khách sạn gần trung tâm để tiết kiệm chi phí di chuyển'],
+          ['🍽️', 'Thử ăn tại các nhà hàng địa phương để tiết kiệm và trải nghiệm ẩm thực thật'],
+          ['📸', 'Mang theo máy ảnh hoặc điện thoại tốt để lưu giữ kỷ niệm'],
+          ['🌤️', 'Kiểm tra thời tiết trước để chuẩn bị trang phục phù hợp']],
+      2: [['🏖️', 'Đặt resort sớm và hỏi về các gói ưu đãi all-inclusive'],
+          ['✈️', 'Xem xét nâng cấp hạng ghế máy bay để thoải mái hơn'],
+          ['💆', 'Đặt trước các dịch vụ spa, tour cao cấp để không bị hết chỗ'],
+          ['🍾', 'Hỏi khách sạn về các dịch vụ ưu tiên dành cho khách VIP']],
+    };
+    const tips = tipSets[bIdx] || tipSets[1];
+    document.getElementById('tipsList').innerHTML = tips.map(t =>
+      `<li><span style="font-size:20px">${t[0]}</span><span>${t[1]}</span></li>`
+    ).join('');
+
+    document.getElementById('resultSection').style.display = 'block';
+    document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('errorMsg');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  // Enter support
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('destination').addEventListener('keypress', e => {
+      if (e.key === 'Enter') planTrip();
+    });
+  });
+</script>
+</body>
+</html>
